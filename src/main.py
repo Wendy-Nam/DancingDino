@@ -8,19 +8,16 @@ def main():
         # 조이스틱 입력 업데이트
         joystick.update()
 
-        # 플레이어 방향 업데이트
-        player.update_direction(joystick.get_joystick_direction())
+        # 예시: 사용자 입력에 따라 자세 업데이트
+        if joystick.is_button_pressed("left"):
+            player.update_pose("left")
+        else:
+            player.update_pose("normal")
 
-        # 플레이어 방향 출력
-        player.display_direction()
+        player.update_animation()
+        player.render()
 
-        # A 및 B 버튼 상태 출력
-        if joystick.is_button_pressed("a"):
-            print("A button pressed")
-        if joystick.is_button_pressed("b"):
-            print("B button pressed")
-        # 콘솔 출력이 너무 빠르게 되지 않도록 잠시 대기
-        time.sleep(0.1)
+        time.sleep(0.2)
 
 if __name__ == "__main__":
     main()
