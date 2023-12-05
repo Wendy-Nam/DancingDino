@@ -151,24 +151,29 @@ class Arrow:
     def render(self, draw, image):
         # 화살표를 렌더링하는 메서드
         image_x = self.x - self.arrow_image.width // 2
+        image_y = self.y - self.arrow_image.height // 2
 
         if self.long:
-            # 화살표 이미지의 y 좌표는 꼬리 길이를 고려하여 조정
-            image_y = self.y - self.tail_length
-            # 꼬리의 시작점은 화살표 이미지의 하단
-            tail_start_y = image_y + self.arrow_image.height
+            # 꼬리의 시작점은 화살표 이미지 하단에 맞춤
+            tail_start_y = image_y + self.arrow_image.height // 2
             tail_start = (self.x, tail_start_y)
+
+            # 꼬리의 끝점 계산 (화면 위로 넘어가지 않도록 최대값 설정)
+            tail_end_y = max(self.y - self.tail_length, 0)
+            tail_end = (self.x, tail_end_y)
+
             # 사각형 좌표 설정
             rect_coords = [
-                tail_start[0] - 15, tail_start[1],  # 왼쪽 상단
-                tail_start[0] + 15, self.y  # 오른쪽 하단 (화살표 y 위치 + 화살표 높이)
+                tail_start[0] - 15, tail_end[1],  # 왼쪽 상단
+                tail_start[0] + 15, tail_start[1]  # 오른쪽 하단
             ]
             draw.rectangle(rect_coords, fill="yellow")
+            
+            # 꼬리가 화면 상단을 넘어가지 않는 경우에만 화살표 그리기
+            if tail_end_y > 0:
+                image.paste(self.arrow_image, (image_x, image_y), self.arrow_image)
         else:
-            # 일반 화살표의 경우, y 좌표는 화살표 y 위치
-            image_y = self.y
-        # 화살표 그리기
-        image.paste(self.arrow_image, (image_x, image_y), self.arrow_image)
+            image.paste(self.arrow_image, (image_x, image_y), self.arrow_image)
 
 
     def update(self):
@@ -191,7 +196,6 @@ class Arrow:
         # 홀드 상태 확인
         if self.long:
             self.is_holding = joystick.is_button_pressed(self.direction) and joystick.is_button_pressed("a")
-
 class Stage:
     """
     게임 스테이지의 배경 및 게임 상태를 관리
@@ -208,14 +212,15 @@ class Stage:
         self.stage_arrow_speed = [10, 13, 16] # 화살표 이동 간격 (속도)
         self.last_spawn_time = time.time()
         self.start_stage_screen = True
-        self.stage_over = False
         self.stage_nb = 0
         self.animation_state = "idle"  # 애니메이션 상태
         self.animation_timer = 0       # 애니메이션 타이머
         self.init_states()
+        self.should_replay = False 
     
     def init_states(self):
         # 스테이지 상태를 초기화하는 메서드
+        self.stage_over = False
         self.current_stage_image = None
         self.score = 0
         self.feedback = ""
@@ -233,7 +238,11 @@ class Stage:
     def end_stage(self):
         # 스테이지를 종료하는 메서드
         self.stage_over = True
-        self.stage_nb += 1
+        if self.score < 1000:
+            self.should_replay = True  # Set to replay if score is less than 1000
+        else:
+            self.should_replay = False  # Don't replay if score is 1000 or more
+            self.stage_nb += 1
     
     def start_animation(self):
         self.animation_state = "ready"
@@ -257,8 +266,13 @@ class Stage:
     def render_animation(self, draw, disp_width, disp_height):
         # 애니메이션 렌더링 로직
         if self.animation_state in ["ready", "countdown3", "countdown2", "countdown1", "start"]:
-            text = "Ready~?" if self.animation_state == "ready" else self.animation_state[-1]
-            text = text.replace("countdown", "")
+            if self.animation_state == "ready":
+                text = "Ready~?"
+            elif self.animation_state == "start":
+                text = "Start!!!" 
+            else:
+                text = self.animation_state
+                text = text.replace("countdown", "")
             text_x, text_y = (disp_width // 2, disp_height // 2)
             fill_color = (255, 0, 0)
             stroke_color = (0, 0, 0)
@@ -297,12 +311,22 @@ class Stage:
         # 텍스트(점수, 타이머, 피드백)를 렌더링하는 메서드
         fill_color = (255, 255, 0)
         stroke_color = (0, 0, 0)
+        perfect_color = (255, 0, 0)  # Red
+        good_color = (0, 255, 0)     # Green
+        miss_color = (0, 0, 255)     # Blue
+
         draw.text((15, 15), f"Score: {self.score}", stroke_width=1, fill=fill_color, stroke_fill=stroke_color)
         draw.text((15, 30), f"Time Left: {int(self.timer)}", stroke_width=1, fill=fill_color, stroke_fill=stroke_color)
         if self.combo_count > 0:  # 콤보가 0보다 크면 콤보 텍스트 표시
             draw.text((50, 120), f"Combo x {self.combo_count}", fill=(255, 0, 0),  stroke_width=1, stroke_fill=(255,255, 0))
         if self.feedback:
-            draw.text((50, 150), self.feedback, fill=(255, 0, 0), stroke_width=1, stroke_fill=(255,0, 255))
+            if self.feedback == "Perfect":
+                text_color = perfect_color
+            elif self.feedback == "Good":
+                text_color = good_color
+            elif self.feedback == "Miss":
+                text_color = miss_color
+            draw.text((50, 150), self.feedback, fill=text_color, stroke_width=1)
             self.feedback = ""
 
     def render_background(self, draw, disp_width, disp_height, image):
@@ -313,6 +337,12 @@ class Stage:
 
     def render(self, draw, disp_width, disp_height, image):
         # 스테이지를 렌더링하는 메서드
+        if self.stage_over:
+            if self.should_replay:
+                draw.text((10, 10), "replay the stage? (press 'b' button)", fill=(255, 255, 255))
+            else:
+                draw.text((10, 10), "success!", fill=(255, 255, 255))
+                time.sleep(2)  # Wait for 2 seconds before proceeding to the next stage
         if self.start_stage_screen:
             draw.text((10, 10), "Press 'A' to Start Stage", fill=(255, 255, 255))
         elif not self.animation_state == 'idle':
@@ -332,7 +362,15 @@ class Stage:
         
     def update(self):
         # 스테이지 상태를 업데이트하는 메서드
-        if self.start_stage_screen and self.joystick.is_button_pressed('a'):
+        if self.stage_over and self.stage_nb == 3:
+            return True
+        if self.stage_over:
+            if not self.should_replay:
+                self.start_stage()
+            elif self.should_replay and self.joystick.is_button_pressed('b'):
+                self.start_stage()
+            return False
+        elif self.start_stage_screen and self.joystick.is_button_pressed('a'):
             self.start_stage()
             return False
         elif not self.animation_state == 'idle':
@@ -352,8 +390,6 @@ class Stage:
             if self.timer <= 0:
                 self.end_stage()
             return False
-        else:
-            return True
 
     def get_charactor_pose(self):
         # 캐릭터의 포즈를 얻는 메서드
@@ -373,7 +409,8 @@ class Stage:
         if current_time - self.last_spawn_time >= self.spawn_interval:
             self.last_spawn_time = current_time
             direction = random.choice(self.arrow_types)
-            isLong = random.choice([True, False, False, False])
+            if self.arrow_types != "leftup" or self.arrow_types != "rightup":
+                isLong = random.choice([True, False])
             # 새 화살표 객체 생성 시 화살표 이미지 딕셔너리 참조 포함
             if isLong:
                 hold_duration = random.randint(3, 5)  # 예를 들어 1~3초 사이의 홀드 시간
@@ -396,14 +433,20 @@ class Stage:
         if len(self.arrows) == 0:
             return ""
         arrow = self.arrows[0]
-        if arrow.long:
+        zone = self.calculate_zone(arrow.y)
+        if arrow.long and arrow.active:
             # 홀드 화살표 처리
-            if arrow.hold_success:
+            if arrow.direction == player_input:
+                if arrow.hold_success:
+                    arrow.active = False
                 return "Perfect"
-            else:
+            elif arrow.direction != player_input and player_input != 'normal':
+                arrow.active = False
+                return "Miss"
+            elif zone == -1:
+                arrow.active = False
                 return "Miss"
         else:
-            zone = self.calculate_zone(arrow.y)
             if (zone == -1) or (arrow.active and arrow.direction != player_input and player_input != 'normal'):
                 arrow.active = False
                 return "Miss"
@@ -442,6 +485,24 @@ class Game:
         self.canvas = tk.Canvas(master, width=240, height=320)
         self.canvas.pack()
         self.stage = Stage(player, joystick)
+        self.opening_frames = []  # 오프닝 애니메이션 프레임을 저장할 리스트
+
+    def load_opening_frames(self):
+        # 오프닝 애니메이션 프레임을 로드하는 메서드
+        for i in range(1, 25):
+            frame_path = f"/home/kau-esw/Desktop/DancingDino/img/opening/{i}.png"  # 이미지 프레임 경로 설정
+            frame_image = Image.open(frame_path)  # PIL로 이미지 열기
+            self.opening_frames.append(frame_image)
+
+    def show_opening_animation(self):
+        # 오프닝 애니메이션을 보여주는 메서드
+        for frame in self.opening_frames:
+            # 각 프레임을 Tkinter PhotoImage로 변환하여 캔버스에 표시
+            tk_frame = ImageTk.PhotoImage(frame)
+            self.canvas.create_image(0, 0, anchor=tk.NW, image=tk_frame)
+            self.canvas.image = tk_frame  # 참조 유지
+            self.master.update()  # 화면 업데이트
+            time.sleep(0.6)  # 각 프레임 간의 딜레이 설정
 
     def start_game(self):
         # 게임을 시작하는 메서드
@@ -452,6 +513,8 @@ class Game:
         self.joystick.update()
         # 게임 상태에 따른 로직 분기
         if self.start_screen and self.joystick.is_button_pressed('b'):
+            self.load_opening_frames()  # 오프닝 애니메이션 프레임 로드
+            self.show_opening_animation()  # 오프닝 애니메이션 보여주기
             self.start_game()
         elif not self.game_over:
             self.game_over = self.stage.update()
@@ -474,7 +537,6 @@ class Game:
         else:
             # Display game-over screen with final score
             draw.text((10, 10), "Game Clear", fill=(255, 255, 255))
-            # draw.text((10, 40), f"Final Score: {self.score}", fill=(255, 255, 255))
          # Tkinter에서 이미지를 캔버스에 렌더링
         tk_image = ImageTk.PhotoImage(image)
         self.canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
