@@ -394,9 +394,9 @@ class Stage:
             return 'normal'
         elif len(direction) == 1:
             return direction[0]
-        elif (direction[0] == "left" and direction[1] == "up") or (direction[0] == "up" and direction[1] == "left"):
+        elif ("left" in direction) and ("up" in direction):
             return "leftup"
-        elif (direction[0] == "right" and direction[1] == "up") or (direction[0] == "up" and direction[1] == "right"):
+        elif ("right" in direction) and ("up" in direction):
             return "rightup"
 
     def spawn_arrow(self):
