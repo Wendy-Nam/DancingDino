@@ -157,24 +157,20 @@ class Arrow:
             # 꼬리의 시작점은 화살표 이미지 하단에 맞춤
             tail_start_y = image_y + self.arrow_image.height // 2
             tail_start = (self.x, tail_start_y)
-
             # 꼬리의 끝점 계산 (화면 위로 넘어가지 않도록 최대값 설정)
             tail_end_y = max(self.y - self.tail_length, 0)
             tail_end = (self.x, tail_end_y)
-
             # 사각형 좌표 설정
             rect_coords = [
                 tail_start[0] - 15, tail_end[1],  # 왼쪽 상단
                 tail_start[0] + 15, tail_start[1]  # 오른쪽 하단
             ]
-            draw.rectangle(rect_coords, fill="yellow")
-            
+            draw.rectangle(rect_coords, fill="yellow")     
             # 꼬리가 화면 상단을 넘어가지 않는 경우에만 화살표 그리기
             if tail_end_y > 0:
                 image.paste(self.arrow_image, (image_x, image_y), self.arrow_image)
         else:
             image.paste(self.arrow_image, (image_x, image_y), self.arrow_image)
-
 
     def update(self):
         # 화살표 위치를 업데이트하는 메서드
@@ -225,7 +221,7 @@ class Stage:
         self.score = 0
         self.feedback = ""
         self.combo_count = 0
-        self.timer = 30.0  # 30-second timer
+        self.timer = 50.0  # 50-second timer
         self.arrows = []
         self.start_animation()
 
@@ -238,8 +234,8 @@ class Stage:
     def end_stage(self):
         # 스테이지를 종료하는 메서드
         self.stage_over = True
-        if self.score < 1000:
-            self.should_replay = True  # Set to replay if score is less than 1000
+        if self.score < 1500:
+            self.should_replay = True  # Set to replay if score is less than 1500
         else:
             self.should_replay = False  # Don't replay if score is 1000 or more
             self.stage_nb += 1
@@ -289,7 +285,7 @@ class Stage:
             self.score += 30
             self.combo_count = 0  # 콤보 리셋
         elif feedback == "Miss":
-            self.score -= 30
+            self.score -= 20
             self.combo_count = 0  # 콤보 리셋
     
     def render_zones(self, draw, disp_width, disp_height, image):
@@ -386,7 +382,7 @@ class Stage:
             if feedback:
                 self.update_score(feedback)
             # Update the timer
-            self.timer -= 0.3
+            self.timer -= 0.25
             if self.timer <= 0:
                 self.end_stage()
             return False
@@ -409,7 +405,8 @@ class Stage:
         if current_time - self.last_spawn_time >= self.spawn_interval:
             self.last_spawn_time = current_time
             direction = random.choice(self.arrow_types)
-            if self.arrow_types != "leftup" or self.arrow_types != "rightup":
+            isLong = False
+            if direction != "leftup" and direction != "rightup":
                 isLong = random.choice([True, False])
             # 새 화살표 객체 생성 시 화살표 이미지 딕셔너리 참조 포함
             if isLong:
@@ -436,9 +433,12 @@ class Stage:
         zone = self.calculate_zone(arrow.y)
         if arrow.long and arrow.active:
             # 홀드 화살표 처리
-            if arrow.direction == player_input:
+            if arrow.is_holding:
                 if arrow.hold_success:
                     arrow.active = False
+                return "Perfect"
+            elif arrow.hold_success:
+                arrow.active = False
                 return "Perfect"
             elif arrow.direction != player_input and player_input != 'normal':
                 arrow.active = False
