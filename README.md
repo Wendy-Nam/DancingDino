@@ -1,6 +1,6 @@
 > Final project for ESW class. Rythme game using Raspi4 and Adafruit LCD display console.
 # Dancing Dino Game
-
+[![Watch the video](https://www.youtube.com/watch?v=G-tjcUxmIwA)
 ## Overview
 "Dancing Dino" is a rhythm-based game where players help a young dinosaur, who dreams of becoming a great dancer, achieve its dreams. The game progresses through various stages, each with increasing difficulty and unique backgrounds, reflecting the dinosaur's journey in mastering dance.
 
