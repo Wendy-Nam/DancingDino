@@ -22,6 +22,7 @@
 - Correctly matching the arrow direction with the joystick at the right time scores points. Incorrect matches deduct points.
 - The game comprises multiple stages, each with a different background and progressively harder challenges.
 - The player's score increases with successful matches and decreases with failures.
+- Score 2000 points in 50 seconds to progress to the next stage or press the B button to retry
 - For 'hold' arrows, hold the joystick in the indicated direction and press the 'A' button until the rectangular tail passes completely.
 
 ## Installation and Setup
