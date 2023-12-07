@@ -1,3 +1,5 @@
+[![Open Source Love](https://badges.frapsoft.com/os/v1/open-source.png?v=103)](https://github.com/ellerbrock/open-source-badges/) [![License: CC0-1.0](https://licensebuttons.net/l/zero/1.0/80x15.png)](http://creativecommons.org/publicdomain/zero/1.0/)
+
 > Final project for ESW class. Rythme game using Raspi4 and Adafruit LCD display console.
 # Dancing Dino Game
 
