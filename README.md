@@ -43,6 +43,8 @@
 
 ## Note
 
-Due to a malfunction in the `Adafruit 1.3" Color TFT Bonnet`'s LCD for Raspberry Pi, i switched to using the `tk` library with VNC for GUI display.
+1. Due to a malfunction in the `Adafruit 1.3" Color TFT Bonnet`'s LCD for Raspberry Pi, i switched to using the `tk` library with VNC for GUI display.
+   - The joystick and button functionalities still utilize the Adafruit module.
 
-The joystick and button functionalities still utilize the Adafruit module.
+2. The code is currently consolidated into a single file for the assignment deadline.
+  - It will be modularized and optimized into separate files soon.s.
