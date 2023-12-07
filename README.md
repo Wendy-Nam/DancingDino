@@ -47,4 +47,4 @@
    - The joystick and button functionalities still utilize the Adafruit module.
 
 2. The code is currently consolidated into a single file for the assignment deadline.
-  - It will be modularized and optimized into separate files soon.s.
+    - It will be modularized and optimized into separate files soon.s.
