@@ -26,4 +26,17 @@
 
 ## Installation and Setup
 - Ensure you have Python and required libraries installed.
+  - setup RPi SPI Enable
+    In RPi Terminal
+    ```
+    sudo raspi-config
+    Interface .. -> SPI -> Enable
+    ```
+  - Requirement Library
+    ```
+    sudo pip3 install adafruit-circuitpython-rgb-display
+    
+    sudo apt-get install fonts-dejavu
+    ```
+    & extra you need
 - Clone the repository and run the game script.
