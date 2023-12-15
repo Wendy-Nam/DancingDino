@@ -474,55 +474,41 @@ class Game:
     """
     게임 메인 클래스, 게임의 메인 루프와 상태를 관리
     """
-    def __init__(self, joystick, player, master):
-        # 게임 초기화
+    def __init__(self, joystick, player):
         self.player = player
         self.joystick = joystick
         self.disp = joystick.disp
+        self.stage = Stage(player, joystick)
         self.start_screen = True
         self.game_over = False
-        self.master = master
-        self.canvas = tk.Canvas(master, width=240, height=320)
-        self.canvas.pack()
-        self.stage = Stage(player, joystick)
-        self.opening_frames = []  # 오프닝 애니메이션 프레임을 저장할 리스트
+        self.opening_frames = []
 
     def load_opening_frames(self):
-        # 오프닝 애니메이션 프레임을 로드하는 메서드
         for i in range(1, 25):
-            frame_path = f"/home/kau-esw/Desktop/DancingDino/img/opening/{i}.png"  # 이미지 프레임 경로 설정
-            frame_image = Image.open(frame_path)  # PIL로 이미지 열기
+            frame_path = f"/home/kau-esw/Desktop/DancingDino/img/opening/{i}.png"
+            frame_image = Image.open(frame_path)
             self.opening_frames.append(frame_image)
 
     def show_opening_animation(self):
-        # 오프닝 애니메이션을 보여주는 메서드
         for frame in self.opening_frames:
-            # 각 프레임을 Tkinter PhotoImage로 변환하여 캔버스에 표시
-            tk_frame = ImageTk.PhotoImage(frame)
-            self.canvas.create_image(0, 0, anchor=tk.NW, image=tk_frame)
-            self.canvas.image = tk_frame  # 참조 유지
-            self.master.update()  # 화면 업데이트
+            # 디스플레이의 해상도에 맞게 이미지 크기 조정
+            resized_frame = frame.resize((self.disp.width, self.disp.height))
+            self.disp.image(resized_frame)
             time.sleep(0.6)  # 각 프레임 간의 딜레이 설정
-
+        
     def start_game(self):
-        # 게임을 시작하는 메서드
         self.start_screen = False
-    
+
     def update(self):
-        # 게임 상태를 업데이트하는 메서드
         self.joystick.update()
-        # 게임 상태에 따른 로직 분기
         if self.start_screen and self.joystick.is_button_pressed('b'):
-            self.load_opening_frames()  # 오프닝 애니메이션 프레임 로드
-            self.show_opening_animation()  # 오프닝 애니메이션 보여주기
+            self.load_opening_frames()
+            self.show_opening_animation()
             self.start_game()
         elif not self.game_over:
             self.game_over = self.stage.update()
             self.render()
-        else:
-            return
-        self.master.after(250, self.update)
-            # 게임 종료 화면 처리 추가
+        time.sleep(0.25)
 
     def render(self):
         # 게임을 렌더링하는 메서드
@@ -537,21 +523,15 @@ class Game:
         else:
             # Display game-over screen with final score
             draw.text((10, 10), "Game Clear", fill=(255, 255, 255))
-         # Tkinter에서 이미지를 캔버스에 렌더링
-        tk_image = ImageTk.PhotoImage(image)
-        self.canvas.create_image(0, 0, anchor=tk.NW, image=tk_image)
-        self.canvas.image = tk_image  # 참조 유지
+        self.disp.image(image)
 
 def main():
-    """
-    메인 함수, 게임 인스턴스를 생성하고 게임 루프를 실행
-    """
-    root = tk.Tk()
     joystick = JoystickController()
     player = Player(sprite_files, joystick.disp)
-    game = Game(joystick, player, root)
-    game.update()
-    root.mainloop()
+    game = Game(joystick, player)
+
+    while not game.game_over:
+        game.update()
 
 if __name__ == "__main__":
     main()
